@@ -1,0 +1,31 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+*.xdv
+*.bbl-SAVE-ERROR
+
+# Editor and temp files
+*.tmp
+*.bak
+*~
+.DS_Store
+
+# Latexmk intermediate directories
+_minted*
+
+generated.*
+main.*
+report.pdf
+

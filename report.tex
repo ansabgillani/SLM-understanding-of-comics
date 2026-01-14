@@ -1,0 +1,728 @@
+%%%
+%%% Small Language Models for Visual-Textual Reasoning in Comic Books
+%%%
+
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{cogsci}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{subcaption}
+\usepackage{nameref}
+
+\cogscifinalcopy %%% Uncomment this line for the final submission
+
+%%% Bibliography %%%
+\usepackage[
+  style=apa,
+  natbib=true,
+  annotation=false,
+]{biblatex}
+\addbibresource{cogsci_bibliography_template.bib} %%% Specify the path to a BibLaTeX file
+\setlength{\bibhang}{.125in}
+
+\usepackage{float} %%% Roger Levy added this and changed figure/table placement to [H] for conformity to Word template, though floating tables and figures to top is still generally recommended!
+
+% Sometimes it can be useful to turn off hyphenation for purposes such as spell checking of the resulting PDF.
+% \usepackage[none]{hyphenat} %%% Uncomment to turn off hyphenation
+
+\title{Small Language Models for Visual-Textual Reasoning in Comic Books}
+
+%%% Format authors using helper functions from authblk package %%%
+\author[1]{\mbox{Syed Ansab Waqar Gillani (syed.ansab.gillani@fau.de)}}
+\affil[1]{Faculty of Sciences, Friedrich-Alexander-Universität Erlangen-Nürnberg}
+
+%%% Or, format authors manually %%%
+% \author{
+%   {\large\bfseries Author N. One (a1@uni.edu)$^1$ \& Author Number Two$^2$} \\
+%   {\normalsize\normalfont
+%     $^1$Department of Hypothetical Sciences, University of Illustrations \\
+%     $^2$Department of Example Studies, University of Demonstrations
+%   }
+% }
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  TODO
+
+Include no author information in the initial submission, to facilitate blind review. AI tools cannot
+be listed as authors, and authors retain full responsibility for the accuracy, integrity, and
+originality of all content in their manuscripts. This includes verifying factual claims, ensuring
+proper attribution of ideas, and confirming that the work meets standards for academic integrity and
+does not contain plagiarized content. See the Acknowledgments section of the template for AI use
+declaration and acknowledgment. The abstract should be one paragraph, no more than 150~words,
+indented 1/8~inch on both sides, in 9~point font with single spacing. The heading
+``\textbf{Abstract}'' should be 10~point, bold, centered, with one line of space below it. This
+one-paragraph abstract section is required only for standard proceedings papers. Following the
+abstract should be a blank line, followed by the header ``\textbf{Keywords:}'' and a list of
+descriptive keywords separated by semicolons, all in 9~point font, as shown below.
+
+\textbf{Keywords:}
+add your choice of indexing terms or keywords;
+kindly use a semicolon;
+between each term
+\end{abstract}
+
+
+
+\section{Introduction}
+
+The domain of comics understanding constitutes a distinct and challenging problem
+within vision-language reasoning. Unlike natural images, which follow relatively stable
+physical and optical rules, comics operate as symbolic systems shaped by implicit
+conventions of layout, sequencing, perspective, and artistic abstraction. Meaning
+emerges from the coordinated interaction of drawings, panel structure, and embedded
+text such as dialogue balloons, narration boxes, and onomatopoeia. This interdependence
+creates a ``multimodal gap'' in which conventional computer vision methods, including
+object detection and optical character recognition, capture only local elements and fail
+to model narrative continuity and contextual meaning.
+
+Early research in comics analysis evolved along two largely separate directions. One
+line of work emphasized low-level structural processing, including panel detection,
+balloon segmentation, and page layout reconstruction, treating the comic page primarily
+as a geometric artifact. A second line focused
+on linguistic analysis of dialogue and captions, often without grounding textual
+interpretation in the surrounding visual context. The emergence of Large Multimodal
+Models (LMMs) and, more recently, Small Language Models (SLMs) with strong reasoning
+capabilities, has begun to bridge this divide. Despite this progress, Text-to-Image
+Retrieval in comics, where panels must be retrieved based on natural language
+descriptions, remains insufficiently explored and lacks systematic evaluation.
+
+This report serves as a comprehensive project report for the study. Anchored by the Layer of
+Comics Understanding (LoCU) framework introduced in recent survey literature,
+this research evaluates the efficacy of the 2025--2026 generation
+of SLMs (ranging from 1 billion to 20 billion parameters) in retrieving comic panels
+based on complex textual prompts. The urgency of this study is driven by the growing
+need for semantic search tools in digital comic archives, accessibility tools for the
+visually impaired, and automated assistive tools for comic creators.
+
+The central hypothesis is that very large parameter counts are not strictly necessary
+for effective visual-textual reasoning in the comics domain. Instead, architectural
+specialization, such as mixture-of-experts routing in GPT-OSS 20B or distilled
+reasoning mechanisms in DeepSeek R1 8B, combined with
+targeted prompting or domain adaptation, can deliver retrieval performance comparable to
+larger models while remaining feasible on consumer hardware. The study systematically
+benchmarks representative models including Gemma 3, Qwen 3, Ministral 3, and Granite
+3.2, benchmarking them across core Information Retrieval (IR) metrics, computational
+efficiency, and human preference alignment.
+
+The analysis moves beyond simple metric reporting to explore the nuances of ``visual-textual reasoning'', from the detection of a ``tense'' atmosphere in a noir panel to the correct attribution of dialogue in a crowded scene. We introduce a rigorous evaluation of retrieval robustness against adversarial and stylistic queries, providing a roadmap for future development in automated media analysis. Ultimately, this work seeks to determine whether the ``reasoning'' capabilities touted by modern SLMs are sufficient to bridge the semantic gap of the comic gutter, or if the medium remains the exclusive province of massive-scale intelligence.
+
+\section{Related Work}
+
+The academic study of comics within computer science has transitioned through distinct epochs, evolving from heuristic-based image processing to deep learning and, most recently, to foundational multimodal models. This evolution mirrors the broader trajectory of AI but is distinguished by the specific constraints and richness of the comic medium. Understanding this historical context is essential for appreciating the innovations introduced by modern SLMs.
+
+\subsection{Text-to-Image Retrieval and Multimodal Alignment}
+The foundational shift in this field was precipitated by the move away from independent unimodal representations toward aligned multimodal embedding spaces. Early works in content-based image retrieval (CBIR) relied on SIFT or HOG features, which captured texture and gradients but failed to encode semantic meaning. The introduction of CLIP (Contrastive Language-Image Pre-training) marked a turning point, enabling zero-shot retrieval by mapping images and text into a shared vector space.
+
+However, standard CLIP models often struggle with the ``dense'' nature of comic panels, where narrative cues are subtle and stylistic variations (e.g., manga screentones vs. American colorist techniques) degrade performance. Recent surveys highlight that while large models have mastered natural image retrieval, their transfer to the comics domain is hindered by the domain gap; a photograph of a ``cat'' is distinct from a stylized, anthropomorphic depiction in a comic, which SLMs must learn to bridge without the massive redundancy of web-scale data.
+
+\subsection{Multimodal Reasoning with Captions and Closure}
+Beyond simple retrieval, the task of Visual Question Answering (VQA) and captioning in comics requires ``closure''—the inference of unseen events. Iyyer et al. (2017) pioneered this with the ``Amazing Mysteries of the Gutter'' dataset, challenging models to predict the next panel in a sequence. Their findings established that visual features alone are insufficient; models must comprehend the sequence of dialogue and action.
+
+Modern approaches, such as ComiCap 3, have advanced this by proposing dense captioning pipelines that utilize Vision-LLMs to generate attribute-rich descriptions. These works demonstrate that ``reasoning'' in comics is not a single task but a composite of detection, linking (who is speaking?), and synthesis. The limitation of prior work has been the reliance on massive, closed-source models (like GPT-4) for this reasoning. This report specifically interrogates whether SLMs like DeepSeek R1, which utilize Chain-of-Thought (CoT) distillation, can replicate this high-level inference without the parameter bloat.
+
+\subsection{Comics and Narrative Visual Understanding}
+The most significant recent contribution to this field is the Layer of Comics Understanding (LoCU) framework proposed by Vivoli et al. This taxonomy organizes tasks hierarchically:
+\begin{enumerate}
+    \item \textbf{Layer 1 (Tagging/Augmentation):} Basic classification of genre or style.
+    \item \textbf{Layer 2 (Grounding):} Detection of panels, characters, and text.
+    \item \textbf{Layer 3 (Retrieval):} Finding specific panels based on semantic queries.
+    \item \textbf{Layer 4 (Understanding):} VQA and visual closure.
+    \item \textbf{Layer 5 (Generation):} Creating new panels or dialogue.
+\end{enumerate}
+
+Most prior work concentrates on Layer 2 tasks, with benchmarks such as Manga109 and CoMix primarily advancing object detection. In contrast, Layers 3 and 4, which require cross-modal and narrative reasoning, remain insufficiently studied for small models. Large models address these tasks by exploiting extensive world knowledge to infer missing narrative context, whereas SLMs, limited by memory and compute, depend on architectural efficiency such as MoE in GPT-OSS 20B and Grouped Query Attention in Qwen 3 to preserve multi-panel context. This report connects the LoCU framework with recent reasoning-oriented SLMs and evaluates their ability to resolve theme-heavy and adversarial queries that reflect practical comic retrieval scenarios.
+\subsection{Foundational Approaches to Comic Retrieval}
+
+Prior to the emergence of modern SLMs, several representative systems established the methodological foundations for comic retrieval. Analyzing their design principles clarifies the technical progress achieved by contemporary models.
+
+\subsubsection{Sketch2Manga: Feature-Based Retrieval}
+Sketch2Manga exemplifies early handcrafted feature pipelines.
+
+\subsubsection{Comic MTL: The Multi-Task Learning Paradigm}
+Comic MTL introduced Deep Learning based joint learning for structural understanding.
+
+\subsubsection{MaRU: Connecting Vision and Language}
+MaRU (Manga Retrieval and Understanding) serves as a direct precursor to SLM-based retrieval architectures.
+
+\section{Dataset}
+
+This study uses a composite dataset derived from established benchmarks, including COMICS and the recently introduced CoMix benchmark. Together, these sources provide sufficient diversity to evaluate robustness across varying narrative structures and visual styles.
+
+\subsection{Dataset Statistics}
+The evaluation is conducted on a curated validation set containing approximately 11{,}500 panel-text pairs.
+\begin{itemize}
+    \item \textbf{Source Material:} 80\% American Comics with color and left-to-right layout, and 20\% Webtoons with vertical scrolling format.
+    \item \textbf{Annotation Density:} Each image includes:
+    \begin{itemize}
+        \item \textbf{Raw Text:} OCR transcriptions of speech balloons.
+        \item \textbf{Scene Descriptions:} Human-annotated summaries of depicted actions.
+        \item \textbf{Metadata:} Author, Genre, and Publication Year.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Captioning Statistics}
+To establish ground truth, all images were annotated from a human perceptual perspective. Annotators visually inspected each panel and produced natural-language descriptions capturing salient objects, actions, spatial relations, and contextual cues. This protocol was designed to reflect how humans semantically interpret scenes, without reliance on fixed label sets or restricted vocabularies.
+
+Vocabulary analysis shows a semantic profile distinct from general image datasets such as COCO.
+\begin{itemize}
+    \item \textbf{Total Distinct Entries:} 90 thematic descriptors with a cumulative frequency of 71{,}799.
+    \item \textbf{Dominant Themes:} High-frequency terms such as ``tense'' (4{,}776), ``tension'' (2{,}985), and ``urgency'' (2{,}193) indicate emphasis on emotionally charged situations rather than neutral object presence.
+    \item \textbf{Visual Atmosphere:} Frequent descriptors including ``shadowy'' (1{,}831), ``eerie'' (1{,}812), ``dimly'' (1{,}520), and ``unseen'' (1{,}453) reflect low-visibility and stylistic cues that require semantic interpretation beyond pixel intensity.
+    \item \textbf{Action and Conflict:} Terms such as ``confrontation'' (1{,}750), ``gripping'' (1{,}714), and ``intense'' (1{,}704) indicate prevalent interpersonal conflict and dynamic scenes that demand relational understanding.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{word_cloud.png}
+    \caption{Word cloud of the captions.}
+    \label{fig:example}
+\end{figure}
+
+\subsection{Prompt Query Sets for Validation}
+To evaluate Visual-Textual Reasoning in SLMs, test queries are organized into five categories:
+\begin{enumerate}
+    \item \textbf{Short Queries:} Single-word or minimal prompts (e.g., ``explosion,'' ``kiss,'' ``Batman'') assessing keyword matching and object recognition, often requiring retrieval of canonical visual representations.
+    
+    \item \textbf{Long Queries:} Descriptive prompts (e.g., ``A hero standing on a rooftop at sunset looking over the city with a melancholic expression'') evaluating compositional reasoning and attribute binding.
+    
+    \item \textbf{Theme-Heavy Queries:} Abstract prompts (e.g., ``rainy mood'', ``cyberpunk city'', ``isolation'') testing sensitivity to atmosphere and stylistic cues beyond explicit object detection.
+    
+    \item \textbf{Adversarial Queries:} Contradictory or atypical prompts (e.g., ``Superman wearing Batman's cowl,'' ``A text bubble that is empty'') probing hallucination tendencies and fine-grained visual consistency.
+    
+    \item \textbf{Style Queries:} Artistic prompts (e.g., ``Dark noir vibe'', ``sketchy lines'') assessing recognition of rendering style, which distinguishes authorship and historical aesthetics in comics.
+\end{enumerate}
+
+
+\section{Methods}
+
+\subsection{LLMs Under Study}
+This project evaluates a diverse array of Small Language Models released in the 2025-2026 window. These models were selected for their parameter efficiency (fitting on consumer GPUs) and advanced reasoning capabilities.
+
+\begin{table}[H]
+  \begin{center}
+    \caption{Models used in the analysis.}
+    \label{model-used-in-analysis}
+    \vskip 0.12in
+    \begin{tabular}{lll}
+      \toprule
+      \textbf{Model} & \textbf{Architecture} & \textbf{Context}\\
+      \midrule
+      Gemma 3 1B & Dense & 32k \\
+      Gemma 3 4B & Multimodal (SigLIP) & 128k \\
+      Gemma 3 12B & Multimodal (SigLIP) & 128k \\
+      GPT-OSS 20B & Mixture-of-Experts & 128k \\
+      Ministral 3 3B & Dense & 256k \\
+      Qwen 3 1.7B & Dense & 32k \\
+      Qwen 3 4B & Dense & 32k \\
+      Qwen 3 8B & Dense & 128k \\
+      OlmOCR 2 7B & Specialized VLM & 32k \\
+      DeepSeek R1 8B & Distilled (Qwen base) & 128k \\
+      Granite 3.2 8B & Dense & 128k \\
+      Mistral 7B v0.3 & Dense & 32k \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsection{Captioning and Metadata Creation}
+A critical preprocessing step involves converting the raw comic panels into a searchable text format. We primarily used vision models wherever available. For models that are not natively multimodal (like GPT-OSS 20B in text-only mode), we generated dense visual captions using Gemma 3 12B's vision encoder. These captions describe the scene (e.g., "Panel shows a close-up of a character's eye, indicating shock").
+
+\subsection{Pipeline}
+The retrieval pipeline operates as follows:
+\begin{enumerate}
+    \item \textbf{Ingestion:} Comic pages are segmented into panels using a YOLO-based detector.
+    \item \textbf{Enrichment:}  Each panel is processed by a vision model (along with available OCR data) to generate a visual description.
+    \item \textbf{Indexing:} The combined text (Dialogue + Description + Metadata) is embedded into a vector store.
+    \item \textbf{Retrieval:} User queries are expanded using the ``Thinking'' mode of relevant SLM to include synonyms and related concepts (e.g., query ``hero'' expands to ``superhero, cape, protagonist, savior'').
+    \item \textbf{Ranking:} The expanded query is matched against the vector store to retrieve the top-K images.
+\end{enumerate}
+
+\subsection{Human Prompting vs. Machine Expectations}
+
+A key challenge was the mismatch between human query phrasing and model training distributions. Users often express abstract concepts such as “sad vibe,” whereas models are optimized for concrete visual descriptions such as “person crying.” To reduce this gap, a Prompt Refinement step was applied, in which an LLM rewrites user queries into visually grounded formulations aligned with the index vocabulary, for example mapping “dark noir vibe” to “high contrast, heavy shadowing, black and white, detective genre.”
+
+\subsection{Retrieval and Indexing}
+We utilized a hybrid retrieval approach combining dense vector retrieval (using embeddings) with sparse keyword matching (BM25). This ensures that specific unique entities (e.g., ``Wolverine'') are captured by keyword matching, while semantic concepts (``loneliness'') are captured by vector similarity.
+
+\section{Results and Discussions}
+
+\subsection{Image Output Comparison}
+Please see Image Outputs Section~\nameref{sec:image_outputs} for sample image outputs from different models compared to human-selected images.
+
+\subsection{Core IR Metrics}
+Model performance was evaluated using three standard Information Retrieval metrics: Precision@K, Recall@K, and Average Normalized Levenshtein Similarity (ANLS). Table~\ref{tab:model_results} reports results for all models.
+
+\begin{table*}[t]
+\centering
+\caption{Precision@K, Recall@K, and ANLS performance across SLMs on the comic retrieval benchmark.}
+\label{tab:model_results}
+  \begin{tabular}{|l|ccc|ccc|cc|}
+    \hline
+    \textbf{Model} 
+    & \multicolumn{3}{c|}{\textbf{Precision}} 
+    & \multicolumn{3}{c|}{\textbf{Recall}} 
+    & \multicolumn{2}{c}{\textbf{ANLS}} \\
+    & k=3 & k=5 & k=10 & k=3 & k=5 & k=10 & mean & std \\
+    \hline
+    deepseekr1\_8B   & 0.2848 & 0.8411 & 2.9073 & 0.1689 & 0.2746 & 0.4040 & 0.3190 & 0.0745 \\
+    gemma3\_12B      & 0.0861 & 0.3609 & 1.5331 & 0.0372 & 0.1186 & 0.1987 & 0.2779 & 0.0376 \\
+    gemma3\_1B       & 0.1192 & 0.3543 & 1.5199 & 0.0574 & 0.1017 & 0.2053 & 0.2859 & 0.0405 \\
+    gemma3\_4B       & 0.2815 & 0.8344 & 3.0000 & 0.1757 & 0.2508 & 0.4139 & 0.3195 & 0.0744 \\
+    gpt\_oss\_20B    & 0.1093 & 0.4007 & 1.6192 & 0.0541 & 0.1220 & 0.2119 & 0.2883 & 0.0398 \\
+    granite3.2\_8B   & 0.3079 & 0.9735 & 3.0497 & 0.1791 & 0.2983 & 0.4040 & 0.3304 & 0.0602 \\
+    ministral3\_3B   & 0.1126 & 0.4040 & 1.5596 & 0.0541 & 0.1051 & 0.1788 & 0.2816 & 0.0298 \\
+    mistral\_v0.3\_7B& 0.3212 & 0.9106 & 2.9934 & 0.2027 & 0.3017 & 0.4570 & 0.3263 & 0.0699 \\
+    olmocr2\_7B      & 0.2848 & 0.8709 & 2.8974 & 0.1655 & 0.2644 & 0.4139 & 0.3188 & 0.0752 \\
+    qwen3\_1.7B      & 0.1325 & 0.4272 & 1.6821 & 0.0777 & 0.1491 & 0.2285 & 0.2939 & 0.0378 \\
+    qwen3\_4B        & 0.1060 & 0.3179 & 1.5563 & 0.0541 & 0.0983 & 0.1854 & 0.2906 & 0.0361 \\
+    qwen3\_8B        & 0.1523 & 0.4437 & 1.7152 & 0.0845 & 0.1491 & 0.2384 & 0.2936 & 0.0375 \\
+    \hline
+  \end{tabular}
+\end{table*}
+
+\subsubsection{Recall@K}
+Recall@K reflects the ability to retrieve relevant panels within the top K results. The strongest performance is observed for Mistral v0.3 7B (0.3017) and Granite 3.2 8B (0.2983), indicating superior coverage of relevant scenes across query types. Gemma 3 4B (0.2508) and OlmOCR 2 7B (0.2644) also achieve competitive recall, while smaller models such as Gemma 3 1B (0.1017) and Qwen 3 4B (0.0983) exhibit substantially lower recall, suggesting limited capacity to capture complex semantic cues.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{recall.png}
+    \caption{Recall performance across models.}
+    \label{fig:recall_performance}
+\end{figure}
+
+
+\subsubsection{Precision@K}
+Precision reflects the relevance of retrieved panels among the top-K ranked results. At Precision@3, Mistral v0.3 7B (0.3212) and Granite 3.2 8B (0.3079) achieve the highest scores, followed closely by Gemma 3 4B and OlmOCR 2 7B (both 0.2848). Precision@5 follows a similar trend, with Granite 3.2 8B reaching the highest value (0.9735). Larger parameter counts alone do not guarantee higher precision, as GPT-OSS 20B and Gemma 3 12B perform below several smaller but more specialized architectures.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{precision.png}
+    \caption{Precision performance across models.}
+    \label{fig:precision_performance}
+\end{figure}
+
+\subsubsection{ANLS (Average Normalized Levenshtein Similarity)}
+
+ANLS measures textual similarity between retrieved captions and ground-truth descriptions. Granite 3.2 8B attains the highest mean ANLS (0.3304), followed by Mistral v0.3 7B (0.3263), indicating stronger alignment between retrieved panels and textual semantics. Gemma 3 variants remain in the mid range (0.278 to 0.320), while Qwen 3 models cluster around 0.29. Standard deviation values suggest greater variability for models that rely heavily on visual ambiguity, particularly in low-contrast or stylized panels.
+
+\subsection{Practical metrics}
+Table~\ref{tab:compute_benchmarks} provides a comparative overview of runtime efficiency and resource requirements across all evaluated SLMs.
+Key observations include:
+\begin{itemize}
+    \item \textbf{Cost / Compute:} Lightweight models dominate throughput, with Gemma 3 1B (85 tok/s) and Qwen3 1.7B (70 tok/s) far exceeding GPT-OSS 20B (5.5 tok/s), reflecting the overhead of larger architectures.
+    
+    \item \textbf{Storage:} Gemma 3 1B (0.9 GB), Qwen3 1.7B (1.4 GB), and Ministral 3B (2.3 GB) enable low-memory deployment, while GPT-OSS 20B requires significantly more storage (13.5 GB).
+    
+    \item \textbf{Energy / Runtime Efficiency:} Per-token latency is lowest for Gemma 3 1B (11.76 ms/token) and increases substantially for larger models such as GPT-OSS 20B and DeepSeek R1 8B ($\geq$40 ms/token).
+    
+    \item \textbf{Robustness:} Stability under complex or ambiguous queries is better reflected in retrieval metrics, where Granite 3.2 8B and Mistral v0.3 7B show stronger consistency than smaller models.
+    
+    \item \textbf{Metadata Generation Time:} Fast embedding and inference favor smaller models, while larger models such as Gemma 3 12B incur higher per-panel processing costs despite improved representational capacity.
+\end{itemize}
+
+\begin{table*}[t]
+    \centering
+    \caption{Computational and Resource Benchmarks of SLMs on MacBook Pro M1 (16 GB RAM).}
+    \label{tab:compute_benchmarks}
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{|l|ccc|c|cc|}
+        \hline
+        \textbf{Model} 
+        & \textbf{T/It (s)} 
+        & \textbf{Tot. T (h)} 
+        & \textbf{Tok/s} 
+        & \textbf{Storage (GB)} 
+        & \textbf{Embed Time (t/s)} 
+        & \textbf{GPU Time (ms/token)} \\
+        \hline
+        Gemma 3 1B            & 1.76 & 5.87  & 85  & 0.9  & 950 & 11.76 \\
+        Gemma 3 4B            & 4.33 & 14.43 & 30  & 2.9  & 420 & 33.33 \\
+        Gemma 3 12B           & 10.8 & 36.00 & 10  & 8.2  & 140 & 100.0 \\
+        GPT OSS 20B           & 45.82& 152.73& 5.5 & 13.5 & 110 & 40.00 \\
+        Ministral 3B          & 3.78 & 12.60 & 35  & 2.3  & 550 & 28.57 \\
+        Qwen3 1.7B            & 2.28 & 7.60  & 70  & 1.4  & 800 & 14.28 \\
+        Qwen3 4B              & 5.33 & 17.77 & 30  & 3.1  & 400 & 33.33 \\
+        Qwen3 8B              & 7.50 & 25.00 & 16  & 5.6  & 210 & 62.50 \\
+        OlmOCR 2 7B           & 5.82 & 19.40 & 17  & 4.9  & 190 & 58.82 \\
+        DeepSeek R1 8B        & 48.50& 161.67& 16  & 5.6  & 210 & 62.50 \\
+        Granite 3.2 8B        & 6.50 & 21.67 & 16  & 5.2  & 220 & 62.50 \\
+        Mistral v0.3 7B       & 5.55 & 18.50 & 18  & 4.6  & 230 & 55.55 \\
+        \hline
+    \end{tabular}
+\end{table*}
+
+\subsection{Human Evaluation}
+Analysis of the human preference survey (see Figure~\ref{fig:human_evaluation}) shows clear stratification among models:
+
+\begin{itemize}
+    \item \textbf{Overall Preference:} The Human Baseline receives substantially more votes than any model, confirming that automated retrieval still lags behind human judgment for narrative relevance.
+    
+    \item \textbf{Top Performing Models:} DeepSeek R1 8B, Gemma 3 12B, and GPT-OSS 20B form the leading tier, each receiving noticeably higher preference than mid-range models.
+    
+    \item \textbf{Model Size vs. Preference:} Preference does not scale consistently with parameter count, as Granite 3.2 8B underperforms several smaller models while Qwen 3 8B exceeds its 4B variant.
+    
+    \item \textbf{Lower-Tier Performance:} Gemma 3 1B, Qwen 3 1.7B, and OlmOCR 2 7B receive the fewest votes, indicating difficulty in capturing fine-grained narrative and stylistic cues.
+\end{itemize}
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{votes.png}
+    \caption{User vote distribution across models in the human evaluation study.}
+    \label{fig:human_evaluation}
+\end{figure}
+
+\section{Conclusion \& Outlook}
+
+This study shows that SLMs can support Visual-Textual Reasoning for comic retrieval, but performance depends on the evaluation axis: IR metrics, compute efficiency, and human preference do not peak for the same models.
+
+\subsection{Viability}
+On IR metrics, Granite 3.2 8B and Mistral v0.3 7B achieve the strongest Recall@5 (0.2983 and 0.3017) and mean ANLS (0.3304 and 0.3263), while DeepSeek R1 8B and Gemma 3 4B remain competitive (Table~2). In contrast, human preference ranks DeepSeek R1 8B, Gemma 3 12B, and GPT-OSS 20B as the most favored model outputs after the Human Baseline (Figure~\ref{fig:human_evaluation}).
+
+\subsection{Trade-offs}
+Compute benchmarks highlight a clear efficiency gradient: Gemma 3 1B (85 tok/s, 11.76 ms/token) and Qwen3 1.7B (70 tok/s, 14.28 ms/token) are fastest, whereas GPT-OSS 20B is slow (5.5 tok/s) and DeepSeek R1 8B is expensive per token (62.50 ms/token) (Table~3). Practically, higher retrieval quality often requires higher latency, and models preferred by users are not necessarily the top models under Recall@K or ANLS.
+
+\subsection{Future Directions}
+\begin{itemize}
+    \item \textbf{Personalized Retrieval:} Integrating ``Personalized Image Retrieval'' to allow users to search based on their specific reading history or aesthetic preferences.
+    \item \textbf{Scene Graph Generation:} Moving beyond embeddings to explicit Scene Graphs (nodes: Batman, edges: punching, Joker) could further bridge the gap between Granite's precision and DeepSeek's reasoning.
+    \item \textbf{Interactive Modification:} Leveraging Layer 3 ``Modification'' capabilities to allow users to not just retrieve, but remix panels.
+\end{itemize}
+
+
+
+\nocite{*}
+
+
+\printbibliography 
+\pagebreak
+
+
+\section{Image Outputs}
+\label{sec:image_outputs}
+
+\subsection{Human Selected Images}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.15\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/human/01_c61_p7_pn0.jpg}
+        \label{fig:images/human/01_c61_p7_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.26\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/human/03_c61_p5_pn5.jpg}
+        \label{fig:images/human/03_c61_p5_pn5.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.20\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/deepseekr1_8B/03_c61_p22_pn0.jpg}
+        \label{fig:images/human/02_c70_p2_pn0.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by humans.}
+    \label{fig:human_compare}
+\end{figure}
+
+\subsection{Deepseek R1 8B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.15\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/deepseekr1_8B/01_c61_p13_pn6.jpg}
+        \label{fig:images/deepseekr1_8B/01_c61_p13_pn6.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.25\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/deepseekr1_8B/02_c70_p2_pn0.jpg}
+        \label{fig:images/deepseekr1_8B/02_c70_p2_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.20\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/deepseekr1_8B/03_c61_p22_pn0.jpg}
+        \label{fig:images/deepseekr1_8B/03_c61_p22_pn0.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Deepseek R1 8B.}
+    \label{fig:deepseekr1_8B_compare}
+\end{figure}
+
+\subsection{Gemma 3 12B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.27\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_12B/01_c61_p5_pn5.jpg}
+        \label{fig:images/gemma3_12B/01_c61_p5_pn5.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_12B/02_c61_p22_pn0.jpg}
+        \label{fig:images/gemma3_12B/02_c61_p22_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.35\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_12B/03_c61_p45_pn6.jpg}
+        \label{fig:images/gemma3_12B/03_c61_p45_pn6.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Gemma 3 12B.}
+    \label{fig:gemma3_12B_compare}
+\end{figure}
+
+\subsection{Gemma 3 4B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.15\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_4B/01_c61_p22_pn0.jpg}
+        \label{fig:images/gemma3_4B/01_c61_p22_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.26\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_4B/02_c70_p2_pn0.jpg}
+        \label{fig:images/gemma3_4B/02_c70_p2_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.35\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_4B/03_c62_p9_pn0.jpg}
+        \label{fig:images/gemma3_4B/03_c62_p9_pn0.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Gemma 3 4B.}
+    \label{fig:gemma3_4B_compare}
+\end{figure}
+
+\subsection{Gemma 3 1B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.27\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_1B/01_c61_p5_pn5.jpg}
+        \label{fig:images/gemma3_1B/01_c61_p5_pn5.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_1B/02_c61_p11_pn4.jpg}
+        \label{fig:images/gemma3_1B/02_c61_p11_pn4.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.23\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gemma3_1B/04_c61_p7_pn1.jpg}
+        \label{fig:images/gemma3_1B/04_c61_p7_pn1.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Gemma 3 1B.}
+    \label{fig:gemma3_1B_compare}
+\end{figure}
+
+
+\subsection{GPT-OSS 20B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.15\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gpt_oss_20B/01_c61_p22_pn0.jpg}
+        \label{fig:images/gpt_oss_20B/01_c61_p22_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.22\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gpt_oss_20B/03_c61_p45_pn6.jpg}
+        \label{fig:images/gpt_oss_20B/03_c61_p45_pn6.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.25\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gpt_oss_20B/05_c61_p48_pn0.jpg}
+        \label{fig:images/gpt_oss_20B/05_c61_p48_pn0.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by GPT-OSS 20B.}
+    \label{fig:gpt_oss_20B_compare}
+\end{figure}
+
+
+\subsection{Granite 3.2 8B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.35\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/granite3.2_8B/02_c61_p7_pn4.jpg}
+        \label{fig:images/granite3.2_8B/02_c61_p7_pn4.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.27\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/granite3.2_8B/04_c62_p9_pn0.jpg}
+        \label{fig:images/granite3.2_8B/04_c62_p9_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/granite3.2_8B/03_c62_p1_pn1.jpg}
+        \label{fig:images/granite3.2_8B/03_c62_p1_pn1.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Granite 3.2 8B.}
+    \label{fig:granite3.2_8B_compare}
+\end{figure}
+
+\subsection{Ministral 3 3B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.30\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/ministral3_3B/01_c61_p42_pn5.jpg}
+        \label{fig:images/ministral3_3B/01_c61_p42_pn5.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.24\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/ministral3_3B/02_c61_p10_pn2.jpg}
+        \label{fig:images/ministral3_3B/02_c61_p10_pn2.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.17\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/ministral3_3B/03_c61_p11_pn4.jpg}
+        \label{fig:images/ministral3_3B/03_c61_p11_pn4.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Ministral 3 3B.}
+    \label{fig:ministral3_3B_compare}
+\end{figure}
+
+\subsection{Mistral 7B v0.3}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.30\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/mistral_v0.3_7B/01_c70_p2_pn0.jpg}
+        \label{fig:images/mistral_v0.3_7B/01_c70_p2_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.17\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/mistral_v0.3_7B/02_c61_p22_pn0.jpg}
+        \label{fig:images/mistral_v0.3_7B/02_c61_p22_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.27\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/mistral_v0.3_7B/04_c61_p7_pn3.jpg}
+        \label{fig:images/mistral_v0.3_7B/04_c61_p7_pn3.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Mistral 7B v0.3.}
+    \label{fig:mistral_v0.3_7B_compare}
+\end{figure}
+
+\subsection{OlmOCR 2 7B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.35\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/olmocr2_7B/03_c62_p9_pn0.jpg}
+        \label{fig:images/olmocr2_7B/03_c62_p9_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.28\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/olmocr2_7B/02_c70_p2_pn0.jpg}
+        \label{fig:images/olmocr2_7B/02_c70_p2_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.16\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/olmocr2_7B/05_c61_p13_pn4.jpg}
+        \label{fig:images/olmocr2_7B/05_c61_p13_pn4.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by OlmOCR 2 7B.}
+    \label{fig:olmocr2_7B_compare}
+\end{figure}
+
+\subsection{Qwen3 1.7B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.35\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_1.7B/03_c61_p48_pn3.jpg}
+        \label{fig:images/qwen3_1.7B/03_c61_p48_pn3.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.21\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_1.7B/04_c73_p25_pn3.jpg}
+        \label{fig:images/qwen3_1.7B/04_c73_p25_pn3.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.20\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_1.7B/05_c61_p45_pn6.jpg}
+        \label{fig:images/qwen3_1.7B/05_c61_p45_pn6.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Qwen3 1.7B.}
+    \label{fig:qwen3_1.7B_compare}
+\end{figure}
+
+\subsection{Qwen3 4B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.30\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_4B/02_c61_p45_pn6.jpg}
+        \label{fig:images/qwen3_4B/02_c61_p45_pn6.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.25\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_4B/03_c61_p48_pn3.jpg}
+        \label{fig:images/qwen3_4B/03_c61_p48_pn3.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.165\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_4B/05_c61_p7_pn1.jpg}
+        \label{fig:images/qwen3_4B/05_c61_p7_pn1.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Qwen3 4B.}
+    \label{fig:qwen3_4B_compare}
+\end{figure}
+
+\subsection{Qwen3 8B}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.20\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_8B/01_c61_p11_pn4.jpg}
+        \label{fig:images/qwen3_8B/01_c61_p11_pn4.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.19\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_8B/02_c61_p22_pn0.jpg}
+        \label{fig:images/qwen3_8B/02_c61_p22_pn0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{0.17\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/qwen3_8B/05_c61_p7_pn1.jpg}
+        \label{fig:images/qwen3_8B/05_c61_p7_pn1.jpg}
+    \end{subfigure}
+
+    \caption{Images selected by Qwen3 8B.}
+    \label{fig:qwen3_8B_compare}
+\end{figure}
+
+\end{document}
