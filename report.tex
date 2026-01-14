@@ -2,7 +2,7 @@
 %%% Small Language Models for Visual-Textual Reasoning in Comic Books
 %%%
 
-\documentclass[10pt,a4paper]{article}
+\documentclass[10pt,letterpaper]{article}
 
 \usepackage{cogsci}
 \usepackage{graphicx}
@@ -50,24 +50,11 @@
 \maketitle
 
 \begin{abstract}
-  TODO
+This report evaluates the performance of the 2025 to 2026 generation of Small Language Models (SLMs), including Gemma 3, Qwen 3, and DeepSeek R1, for visual textual reasoning in comic narratives, a domain characterized by a pronounced multimodal gap in which conventional vision centric approaches struggle to capture narrative structure and contextual dependencies. Grounded in the Layer of Comics Understanding (LOCU) framework and leveraging a composite dataset comprising American comics and Webtoon panels, the study conducts a systematic benchmarking of these models with respect to information retrieval metrics, computational efficiency, and human preference judgments. The findings reveal a systematic divergence between metric based performance and perceived semantic alignment: models such as Granite 3.2 8B and Mistral v0.3 7B achieve higher recall and precision, whereas human evaluators consistently favor the reasoning outputs of DeepSeek R1 8B and Gemma 3 12B. This discrepancy suggests that while SLMs are well suited for tasks such as semantic image retrieval, model selection should be guided by the target objective, balancing retrieval accuracy against the depth and coherence of narrative interpretation.
 
-Include no author information in the initial submission, to facilitate blind review. AI tools cannot
-be listed as authors, and authors retain full responsibility for the accuracy, integrity, and
-originality of all content in their manuscripts. This includes verifying factual claims, ensuring
-proper attribution of ideas, and confirming that the work meets standards for academic integrity and
-does not contain plagiarized content. See the Acknowledgments section of the template for AI use
-declaration and acknowledgment. The abstract should be one paragraph, no more than 150~words,
-indented 1/8~inch on both sides, in 9~point font with single spacing. The heading
-``\textbf{Abstract}'' should be 10~point, bold, centered, with one line of space below it. This
-one-paragraph abstract section is required only for standard proceedings papers. Following the
-abstract should be a blank line, followed by the header ``\textbf{Keywords:}'' and a list of
-descriptive keywords separated by semicolons, all in 9~point font, as shown below.
 
 \textbf{Keywords:}
-add your choice of indexing terms or keywords;
-kindly use a semicolon;
-between each term
+Small Language Models (SLMs), Visual-Textual Reasoning, Comics Understanding, Text-to-Image Retrieval, LOCU Framework, Multimodal AI, Information Retrieval Benchmarking.
 \end{abstract}
 
 
@@ -115,6 +102,8 @@ efficiency, and human preference alignment.
 
 The analysis moves beyond simple metric reporting to explore the nuances of ``visual-textual reasoning'', from the detection of a ``tense'' atmosphere in a noir panel to the correct attribution of dialogue in a crowded scene. We introduce a rigorous evaluation of retrieval robustness against adversarial and stylistic queries, providing a roadmap for future development in automated media analysis. Ultimately, this work seeks to determine whether the ``reasoning'' capabilities touted by modern SLMs are sufficient to bridge the semantic gap of the comic gutter, or if the medium remains the exclusive province of massive-scale intelligence.
 
+\pagebreak
+
 \section{Related Work}
 
 The academic study of comics within computer science has transitioned through distinct epochs, evolving from heuristic-based image processing to deep learning and, most recently, to foundational multimodal models. This evolution mirrors the broader trajectory of AI but is distinguished by the specific constraints and richness of the comic medium. Understanding this historical context is essential for appreciating the innovations introduced by modern SLMs.
@@ -132,11 +121,15 @@ Modern approaches, such as ComiCap 3, have advanced this by proposing dense capt
 \subsection{Comics and Narrative Visual Understanding}
 The most significant recent contribution to this field is the Layer of Comics Understanding (LoCU) framework proposed by Vivoli et al. This taxonomy organizes tasks hierarchically:
 \begin{enumerate}
-    \item \textbf{Layer 1 (Tagging/Augmentation):} Basic classification of genre or style.
-    \item \textbf{Layer 2 (Grounding):} Detection of panels, characters, and text.
-    \item \textbf{Layer 3 (Retrieval):} Finding specific panels based on semantic queries.
-    \item \textbf{Layer 4 (Understanding):} VQA and visual closure.
-    \item \textbf{Layer 5 (Generation):} Creating new panels or dialogue.
+    \item \textbf{Layer 1 (Tagging \& Augmentation):} This layer includes tasks operating on single images without explicit semantic grounding, such as style or genre classification, emotion recognition, super-resolution, and style transfer. These tasks focus on low-level visual features and pixel-level transformations.
+    
+    \item \textbf{Layer 2 (Grounding, Analysis, and Segmentation):} This layer introduces the need for detecting and locating specific elements. Object Detection identifies characters and text boxes. Character Re-Identification (tracking a character across panels despite pose or outfit changes) and Text-Character Association (linking a speech balloon to its speaker) are critical here. This layer forms the ``parsing'' stage of understanding.
+    
+    \item \textbf{Layer 3 (Retrieval and Modification):} The primary focus of this report, Layer~3, involves cross-modal reasoning. Text-to-Image Retrieval requires the model to map a textual description to a visual scene. Image Inpainting and Modification allow for the alteration of comic content based on semantic understanding. This layer bridges the gap between recognition (Layer~2) and full comprehension.
+    
+    \item \textbf{Layer 4 (Advanced Visual--Language Understanding):} This layer encompasses tasks that require high-level reasoning, such as Visual Question Answering (VQA) and Visual Entailment. Here, the model must not only find elements but understand their causal and narrative relationships (e.g., ``Why is the character crying?'').
+    
+    \item \textbf{Layer 5 (Generation and Synthesis):} The pinnacle of the hierarchy involves generating new content, such as Text-to-Comic Generation or Narrative Synthesis, where the model acts as a creator.
 \end{enumerate}
 
 Most prior work concentrates on Layer 2 tasks, with benchmarks such as Manga109 and CoMix primarily advancing object detection. In contrast, Layers 3 and 4, which require cross-modal and narrative reasoning, remain insufficiently studied for small models. Large models address these tasks by exploiting extensive world knowledge to infer missing narrative context, whereas SLMs, limited by memory and compute, depend on architectural efficiency such as MoE in GPT-OSS 20B and Grouped Query Attention in Qwen 3 to preserve multi-panel context. This report connects the LoCU framework with recent reasoning-oriented SLMs and evaluates their ability to resolve theme-heavy and adversarial queries that reflect practical comic retrieval scenarios.
@@ -305,7 +298,7 @@ Precision reflects the relevance of retrieved panels among the top-K ranked resu
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\linewidth]{precision.png}
+    \includegraphics[width=0.9\linewidth]{precision.png}
     \caption{Precision performance across models.}
     \label{fig:precision_performance}
 \end{figure}
@@ -313,6 +306,13 @@ Precision reflects the relevance of retrieved panels among the top-K ranked resu
 \subsubsection{ANLS (Average Normalized Levenshtein Similarity)}
 
 ANLS measures textual similarity between retrieved captions and ground-truth descriptions. Granite 3.2 8B attains the highest mean ANLS (0.3304), followed by Mistral v0.3 7B (0.3263), indicating stronger alignment between retrieved panels and textual semantics. Gemma 3 variants remain in the mid range (0.278 to 0.320), while Qwen 3 models cluster around 0.29. Standard deviation values suggest greater variability for models that rely heavily on visual ambiguity, particularly in low-contrast or stylized panels.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{anls.png}
+    \caption{ANLS across models.}
+    \label{fig:anls_performance}
+\end{figure}
 
 \subsection{Practical metrics}
 Table~\ref{tab:compute_benchmarks} provides a comparative overview of runtime efficiency and resource requirements across all evaluated SLMs.
